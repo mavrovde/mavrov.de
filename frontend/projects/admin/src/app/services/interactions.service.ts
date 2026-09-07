@@ -13,6 +13,13 @@ export interface Interaction {
     company: string | null;
     message: string;
     payload: Record<string, unknown> | null;
+    /** Transparent translation (#248): the ORIGINAL message above is never
+     *  mutated; these are separate, machine-generated, re-runnable. Null =
+     *  predates the feature or the flag is off. */
+    detected_language: string | null;
+    translated_message: string | null;
+    translated_to: string | null;
+    translation_status: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -51,6 +58,11 @@ export class InteractionsService {
             params = params.set('source', options.source);
         }
         return this.http.get<InteractionPage>(this.apiUrl, { params });
+    }
+
+    /** Re-run machine translation for one interaction (#248). */
+    rerunTranslation(id: string): Observable<Interaction> {
+        return this.http.post<Interaction>(`${this.apiUrl}/${id}/translate`, {});
     }
 
     updateStatus(id: string, status: string): Observable<Interaction> {

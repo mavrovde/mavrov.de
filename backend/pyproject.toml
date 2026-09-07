@@ -15,6 +15,9 @@ addopts = [
     "-p", "no:warnings",
     "-W", "ignore",
 ]
+markers = [
+    "real_llm_seam: opt out of the autouse translation-LLM mock; the test mocks the real fallback fork's transports itself (rule 10 still holds)",
+]
 filterwarnings = [
     "ignore",
     "ignore:'asyncio.get_event_loop_policy' is deprecated:DeprecationWarning",

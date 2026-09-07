@@ -827,6 +827,13 @@ reset, run `git status --short` and ask what ELSE is uncommitted in that file. T
 edit, re-edit it — reach for the file-level revert only when you intend to lose everything since the
 last commit. Commit working increments during a long round so a revert costs minutes, not the round.
 
+**Mutation-testing corollary (#298 round 1, same failure repeated):** the mutate → run → restore
+loop makes `git checkout <file>` feel like "undo the mutation", but when the file ALSO carries the
+round's uncommitted fixes, the restore silently deletes them — and the just-passed test run makes
+everything look fine. Two mutation checks in one round each destroyed an uncommitted fix this way
+(the authz guard, the CV wiring). **Commit the round's fixes BEFORE the first mutation check**; then
+`git checkout` restores exactly the fixed state and the loop is safe.
+
 ## 37. Model quoting AT THE SPLIT — a strip afterwards forges values
 
 `set -- $seg` is IFS word-splitting, not argv splitting, and no amount of cleanup afterwards makes

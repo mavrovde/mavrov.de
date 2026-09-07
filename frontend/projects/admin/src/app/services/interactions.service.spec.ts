@@ -52,4 +52,11 @@ describe('InteractionsService', () => {
         req.flush({ id: 'abc', status: 'closed' });
         expect(result!.status).toBe('closed');
     });
+
+    it('re-runs translation via POST (#248)', () => {
+        service.rerunTranslation('i1').subscribe();
+        const req = httpMock.expectOne(`${base}/i1/translate`);
+        expect(req.request.method).toBe('POST');
+        req.flush({ id: 'i1', translation_status: 'pending' });
+    });
 });

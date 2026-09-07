@@ -78,6 +78,11 @@ services:
       - HIREFOLIO_TELEGRAM_CHAT_ID=${HIREFOLIO_TELEGRAM_CHAT_ID:-}
       - HIREFOLIO_NOTIFY_WEBHOOK_URL=${HIREFOLIO_NOTIFY_WEBHOOK_URL:-}
       - NOTIFY_TIMEOUT_SECONDS=${NOTIFY_TIMEOUT_SECONDS:-10}
+      # Transparent translation (#248): without these forwards the knobs in
+      # the root .env are INERT — config.py's env_file resolves inside the
+      # container (the ADMIN_PASSWORD/LINKEDIN_IMPORT_TOKEN lesson below).
+      - TRANSLATION_ENABLED=${TRANSLATION_ENABLED:-true}
+      - OWNER_LANGUAGE=${OWNER_LANGUAGE:-en}
       # Email (#262): the dev stack defaults to the bundled Mailpit catch-all —
       # every notification is visible at http://localhost:8025 with ZERO
       # config, and nothing ever leaves the machine (rule 10). Point SMTP_* at

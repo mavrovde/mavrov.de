@@ -65,6 +65,12 @@ class Settings(BaseSettings):
     # From-address override; falls back to smtp_user, then a local placeholder
     # (a no-auth relay has no user to borrow the From from).
     smtp_from: str = ""
+
+    # Transparent translation (#248): flag-disabled cleanly — off means no
+    # background task is ever scheduled and the UI shows no remnants.
+    translation_enabled: bool = True
+    # The language recruiter messages are translated INTO (ISO 639-1).
+    owner_language: str = "en"
     admin_email: str = "admin@mavrov.de"
     api_prefix: str = "/api/app"
     # Read from HIREFOLIO_GEMINI_API_KEY, deliberately NOT the generic

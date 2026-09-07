@@ -42,6 +42,14 @@ class Interaction(Base):
     # Source-specific extras (subject line, booking slot, platform ids, ...).
     payload: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
+    # Transparent translation (#248): the ORIGINAL `message` above is never
+    # mutated; these are separate, re-runnable, and nullable — a row without
+    # them predates the feature or has it disabled.
+    detected_language: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    translated_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    translated_to: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    translation_status: Mapped[str | None] = mapped_column(String(16), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
     )

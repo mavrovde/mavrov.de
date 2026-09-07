@@ -32,6 +32,7 @@ from app.models.user import User
 from app.services.auth import get_current_admin_user
 from app.services.notifications import OwnerNotification, notify_owner
 from app.services.rate_limit import SlidingWindowRateLimiter, rate_limit_dependency
+from app.services.translation import translate_interaction
 
 router = APIRouter(prefix="/interactions", tags=["interactions"])
 admin_router = APIRouter(prefix="/admin/interactions", tags=["admin-interactions"])
@@ -88,6 +89,10 @@ class InteractionOut(BaseModel):
     company: str | None
     message: str
     payload: dict[str, Any] | None
+    detected_language: str | None
+    translated_message: str | None
+    translated_to: str | None
+    translation_status: str | None
     created_at: str
     updated_at: str
 
@@ -102,6 +107,10 @@ class InteractionOut(BaseModel):
             company=i.company,
             message=i.message,
             payload=i.payload,
+            detected_language=i.detected_language,
+            translated_message=i.translated_message,
+            translated_to=i.translated_to,
+            translation_status=i.translation_status,
             created_at=i.created_at.isoformat(),
             updated_at=i.updated_at.isoformat(),
         )
@@ -159,6 +168,10 @@ async def submit_contact(
     background_tasks.add_task(
         _notify, body.name, body.email, body.company, body.message
     )
+    # Transparent translation (#248): background, after the response — intake
+    # never blocks on it, and the task records its own status on the row.
+    if settings.translation_enabled:
+        background_tasks.add_task(translate_interaction, interaction.id)
     return InteractionOut.from_model(interaction)
 
 
@@ -226,4 +239,27 @@ async def update_status(
     interaction.status = body.status
     await db.commit()
     await db.refresh(interaction)
+    return InteractionOut.from_model(interaction)
+
+
+@admin_router.post("/{interaction_id}/translate", response_model=InteractionOut)
+async def rerun_translation(
+    interaction_id: uuid.UUID,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+    _admin: User = Depends(get_current_admin_user),
+) -> InteractionOut:
+    """Re-run translation on demand (#248: translated_* are separate and
+    re-runnable — e.g. after fixing the model config, or for rows that predate
+    the feature). Resets status to 'pending' so the UI can show progress; the
+    background task overwrites only the translated_* columns, never `message`."""
+    if not settings.translation_enabled:
+        raise HTTPException(status_code=409, detail="Translation is disabled")
+    interaction = await db.get(Interaction, interaction_id)
+    if interaction is None:
+        raise HTTPException(status_code=404, detail="Interaction not found")
+    interaction.translation_status = "pending"
+    await db.commit()
+    await db.refresh(interaction)
+    background_tasks.add_task(translate_interaction, interaction.id)
     return InteractionOut.from_model(interaction)

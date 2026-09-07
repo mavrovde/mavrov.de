@@ -427,6 +427,10 @@ PROFILE_DATA_TIMEOUT_SECONDS=5             # default: 5
 DB_RESTORE_TIMEOUT_SECONDS=300             # default: 300 — psql restore ceiling
 IMPORT_MAX_POSTS_JSON_MB=10                # default: 10 MB
 IMPORT_MAX_POSTS_PER_REQUEST=500           # default: 500 entries
+
+# Transparent translation (#248) — forwarded by both compose files.
+TRANSLATION_ENABLED=true                   # default: true — false disables cleanly
+OWNER_LANGUAGE=en                          # default: en — ISO 639-1; casing/region normalized
 ```
 
 ### Root Environment (Docker Compose)
@@ -515,6 +519,13 @@ Meta-verified business account, pre-approved message templates, and bills per co
 That cost/approval model makes it a deliberate later adapter; the channel seam
 (`NotificationChannel` in `backend/app/services/notifications.py`) makes it one small class the
 day an owner actually needs it. No stub pretends otherwise.
+## 🌐 Transparent translation (#248)
+
+Recruiter messages arrive in any language; the inbox detects it and shows a translation into
+your language (`OWNER_LANGUAGE`, default `en`) — **clearly labeled as machine-generated, with
+the original always one click away and never modified in storage**. Local Ollama by default
+(nothing leaves your machine); your Gemini key upgrades it if configured. `TRANSLATION_ENABLED=false`
+turns the whole feature off cleanly.
 
 ## 🌐 API Endpoints
 

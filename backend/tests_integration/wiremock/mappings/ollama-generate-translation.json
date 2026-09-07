@@ -1,0 +1,21 @@
+{
+  "priority": 5,
+  "request": {
+    "method": "POST",
+    "urlPath": "/api/generate",
+    "bodyPatterns": [
+      { "contains": "precise translation service" }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "model": "llama3.2",
+      "response": "{\"language\": \"de\", \"translation\": \"Hello, are you open to a new role? [wiremock]\"}",
+      "done": true
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

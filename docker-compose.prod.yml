@@ -71,6 +71,10 @@ services:
       - HIREFOLIO_TELEGRAM_CHAT_ID=${HIREFOLIO_TELEGRAM_CHAT_ID:-}
       - HIREFOLIO_NOTIFY_WEBHOOK_URL=${HIREFOLIO_NOTIFY_WEBHOOK_URL:-}
       - NOTIFY_TIMEOUT_SECONDS=${NOTIFY_TIMEOUT_SECONDS:-10}
+      # Transparent translation (#248): same forwarding rule as dev — without
+      # these the root .env knobs never reach the container.
+      - TRANSLATION_ENABLED=${TRANSLATION_ENABLED:-true}
+      - OWNER_LANGUAGE=${OWNER_LANGUAGE:-en}
       # Email (#262): pass-through from .env. Empty SMTP_HOST = sending
       # disabled (the graceful-skip contract). Without these lines the whole
       # DEPLOYMENT.md email section was inert on prod — the settings never

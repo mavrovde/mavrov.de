@@ -53,7 +53,36 @@
           </tr>
           <tr *ngIf="expandedId === i.id">
             <td colspan="5" class="px-4 py-3 bg-gray-50 text-sm">
-              <p class="whitespace-pre-wrap mb-3">{{ i.message }}</p>
+<!-- #298 review blocker 3: both backend failure paths leave detected_language
+     NULL, so gating the bar on it alone hid "translation failed" AND the only
+     re-translate affordance. Any translation signal shows the bar. -->
+              <div *ngIf="i.detected_language || i.translation_status || i.translated_message"
+                class="mb-2 flex items-center gap-2 flex-wrap" data-testid="translation-bar">
+                <span *ngIf="i.detected_language" class="rounded bg-gray-200 px-2 py-0.5 text-xs font-mono uppercase"
+                  [attr.aria-label]="'detected language ' + i.detected_language">{{ i.detected_language }}</span>
+                <span *ngIf="showingTranslation(i)" class="text-xs text-gray-500 italic">
+                  machine-translated to {{ i.translated_to }} — original in {{ i.detected_language }}
+                </span>
+                <button *ngIf="i.translated_message" type="button"
+                  (click)="toggleOriginal(i)"
+                  class="text-xs underline text-blue-700"
+                  [attr.aria-label]="'toggle original for ' + i.name">
+                  {{ showOriginal[i.id] ? 'show translation' : 'show original' }}
+                </button>
+                <span *ngIf="i.translation_status === 'failed'" class="text-xs text-red-600">
+                  translation failed
+                </span>
+                <span *ngIf="i.translation_status === 'pending'" class="text-xs text-gray-500">
+                  translating…
+                </span>
+                <button *ngIf="i.translation_status === 'failed' || i.translated_message" type="button"
+                  (click)="retranslate(i)" [disabled]="retranslatingId === i.id"
+                  class="text-xs underline text-blue-700 disabled:opacity-40"
+                  [attr.aria-label]="'re-run translation for ' + i.name">
+                  {{ retranslatingId === i.id ? 're-running…' : 're-translate' }}
+                </button>
+              </div>
+              <p class="whitespace-pre-wrap mb-3" data-testid="message-text">{{ displayedMessage(i) }}</p>
               <button (click)="promote(i)" [disabled]="promotingId === i.id"
                 class="border rounded px-3 py-1 bg-white hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
                 [attr.aria-label]="'promote ' + i.name + ' to pipeline'">

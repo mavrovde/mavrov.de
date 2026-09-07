@@ -64,28 +64,42 @@ async def request_cv(
         # 1b. Index it in the unified inbox (#69): the CvRequest stays the
         # domain record; the Interaction is the hub entry linking back via
         # source_ref. Never blocks the CV flow on failure.
+        inbox_interaction_id = None
         try:
             from app.models.interaction import Interaction
 
-            db.add(
-                Interaction(
-                    source="cv_request",
-                    source_ref=cv_request_id,
-                    status="new",
-                    name=payload.name,
-                    email=payload.email,
-                    company=payload.company,
-                    message=payload.message,
-                    payload={
-                        "position_description": payload.position_description,
-                        "cv_version": active_cv.version,
-                    },
-                )
+            interaction = Interaction(
+                source="cv_request",
+                source_ref=cv_request_id,
+                status="new",
+                name=payload.name,
+                email=payload.email,
+                company=payload.company,
+                message=payload.message,
+                payload={
+                    "position_description": payload.position_description,
+                    "cv_version": active_cv.version,
+                },
             )
+            db.add(interaction)
+            # Flush assigns the PK while the object is live; touching it after
+            # commit would lazily reload an expired object (greenlet error, see
+            # cv_request_id above).
+            await db.flush()
+            inbox_interaction_id = interaction.id
             await db.commit()
         except Exception as e:
             logger.error(f"Failed to index CV request in the inbox: {e}")
             await db.rollback()
+            inbox_interaction_id = None
+
+        # Transparent translation (#248): a CV request is a recruiter message
+        # in the same inbox — it gets the same background translation as the
+        # contact form, and the same guarantee: never blocks the CV flow.
+        if inbox_interaction_id is not None and settings.translation_enabled:
+            from app.services.translation import translate_interaction
+
+            background_tasks.add_task(translate_interaction, inbox_interaction_id)
 
         # 2. Send emails in background
         background_tasks.add_task(process_email_notifications, cv_request_id, payload)

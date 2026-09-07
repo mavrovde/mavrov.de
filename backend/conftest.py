@@ -43,6 +43,10 @@ for _notify_var in (
     "SMTP_HOST",
     "SMTP_USER",
     "SMTP_PASSWORD",
+    # Rule 10: a developer's Gemini key in the environment must never make a
+    # green suite bill Gemini (#298 round 1: 8 real generativelanguage
+    # requests from unrelated contact tests with a key exported).
+    "HIREFOLIO_GEMINI_API_KEY",
 ):
     os.environ.pop(_notify_var, None)
 
@@ -61,6 +65,9 @@ def _scrub_notification_settings() -> None:
     _settings.smtp_host = ""
     _settings.smtp_user = ""
     _settings.smtp_password = ""
+    # Same reasoning for the LLM key (#298): empty key = local-fallback route;
+    # the transport itself is additionally mocked suite-wide in tests/conftest.
+    _settings.gemini_api_key = ""
 
 
 def mock_module(name):

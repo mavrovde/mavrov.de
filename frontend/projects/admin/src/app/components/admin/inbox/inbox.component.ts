@@ -31,6 +31,11 @@ export class InboxComponent implements OnInit {
   pageSize = 20;
 
   statusFilter = '';
+
+  // Transparent translation (#248): per-row toggle between the ORIGINAL and
+  // the machine translation. Keyed by id so it survives list refreshes.
+  showOriginal: Record<string, boolean> = {};
+  retranslatingId: string | null = null;
   sourceFilter = '';
 
   loading = false;
@@ -136,6 +141,44 @@ export class InboxComponent implements OnInit {
       error: (err) => {
         console.error('Error updating status:', err);
         this.error = 'Failed to update the status';
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  toggleOriginal(interaction: Interaction) {
+    this.showOriginal[interaction.id] = !this.showOriginal[interaction.id];
+  }
+
+  /** The text the expanded row shows: the labeled machine translation when
+   *  one exists and the toggle is not set — the original otherwise. The
+   *  ORIGINAL is always one click away; nothing is ever replaced silently. */
+  displayedMessage(interaction: Interaction): string {
+    if (interaction.translated_message && !this.showOriginal[interaction.id]) {
+      return interaction.translated_message;
+    }
+    return interaction.message;
+  }
+
+  showingTranslation(interaction: Interaction): boolean {
+    return !!interaction.translated_message && !this.showOriginal[interaction.id];
+  }
+
+  retranslate(interaction: Interaction) {
+    if (this.retranslatingId) {
+      return;
+    }
+    this.retranslatingId = interaction.id;
+    this.interactionsService.rerunTranslation(interaction.id).subscribe({
+      next: (updated) => {
+        this.items = this.items.map((i) => (i.id === updated.id ? updated : i));
+        this.retranslatingId = null;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error re-running translation:', err);
+        this.error = 'Failed to re-run translation';
+        this.retranslatingId = null;
         this.cdr.detectChanges();
       },
     });
